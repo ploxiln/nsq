@@ -287,11 +287,12 @@ func (c *Channel) IsPaused() bool {
 // PutMessage writes a Message to the queue
 func (c *Channel) PutMessage(m *Message) error {
 	c.RLock()
-	defer c.RUnlock()
 	if c.Exiting() {
+		c.RUnlock()
 		return errors.New("exiting")
 	}
 	err := c.put(m)
+	c.RUnlock()
 	if err != nil {
 		return err
 	}

@@ -165,11 +165,12 @@ func (t *Topic) DeleteExistingChannel(channelName string) error {
 // PutMessage writes a Message to the queue
 func (t *Topic) PutMessage(m *Message) error {
 	t.RLock()
-	defer t.RUnlock()
 	if atomic.LoadInt32(&t.exitFlag) == 1 {
+		t.RUnlock()
 		return errors.New("exiting")
 	}
 	err := t.put(m)
+	t.RUnlock()
 	if err != nil {
 		return err
 	}
