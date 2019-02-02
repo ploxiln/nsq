@@ -112,16 +112,7 @@ func (f *FileLogger) router() {
 				f.updateFile()
 				sync = true
 			}
-			_, err := f.Write(m.Body)
-			if err != nil {
-				f.logf(lg.FATAL, "writing message to disk: %s", err)
-				os.Exit(1)
-			}
-			_, err = f.Write([]byte("\n"))
-			if err != nil {
-				f.logf(lg.FATAL, "writing newline to disk: %s", err)
-				os.Exit(1)
-			}
+			f.WriteMsg(m.Body) // logs and exits on error
 			output[pos] = m
 			pos++
 			if pos == cap(output) {
@@ -226,6 +217,34 @@ func (f *FileLogger) Write(p []byte) (int, error) {
 	n, err := f.writer.Write(p)
 	f.filesize += int64(n)
 	return n, err
+}
+
+// instead of returning error, logs and exits
+func (f *FileLogger) WriteMsg(p []byte) {
+	blen := len(p)
+	if blen < 2048 {
+		// copy and single syscall for small messages
+		var buf [2048]byte
+		copy(buf[0:2048], p)
+		buf[blen] = byte('\n')
+		_, err := f.Write(buf[0:blen+1])
+		if err != nil {
+			f.logf(lg.FATAL, "writing message to disk: %s", err)
+			os.Exit(1)
+		}
+	} else {
+		// no copy and two syscalls for large messages
+		_, err := f.Write(p)
+		if err != nil {
+			f.logf(lg.FATAL, "writing message to disk: %s", err)
+			os.Exit(1)
+		}
+		_, err = f.Write([]byte("\n"))
+		if err != nil {
+			f.logf(lg.FATAL, "writing newline to disk: %s", err)
+			os.Exit(1)
+		}
+	}
 }
 
 func (f *FileLogger) Sync() error {
