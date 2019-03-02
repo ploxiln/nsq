@@ -443,7 +443,8 @@ func (c *Channel) StartInFlightTimeout(msg *Message, clientID int64, timeout tim
 func (c *Channel) StartDeferredTimeout(msg *Message, timeout time.Duration) error {
 	absTs := time.Now().Add(timeout).UnixNano()
 	item := &pqueue.Item{Value: msg, Priority: absTs}
-	err := c.pushDeferredMessage(item)
+	msg.deliveryTS = absTs  // in case saved to Backend (DiskQueue)
+	err := c.pushDeferredMessage(item, msg.ID)
 	if err != nil {
 		return err
 	}
@@ -498,10 +499,9 @@ func (c *Channel) removeFromInFlightPQ(msg *Message) {
 	c.inFlightMutex.Unlock()
 }
 
-func (c *Channel) pushDeferredMessage(item *pqueue.Item) error {
+func (c *Channel) pushDeferredMessage(item *pqueue.Item, id MessageID) error {
 	c.deferredMutex.Lock()
 	// TODO: these map lookups are costly
-	id := item.Value.(*Message).ID
 	_, ok := c.deferredMessages[id]
 	if ok {
 		c.deferredMutex.Unlock()
