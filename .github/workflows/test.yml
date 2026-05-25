@@ -11,16 +11,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        go:   ["1.21.x", "1.22.x", "1.23.x"]
+        go:   ["1.23.x", "1.24.x", "1.25.x", "1.26.x"]
         arch: ["amd64", "386"]
 
     env:
       GOARCH: "${{matrix.arch}}"
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
-      - uses: WillAbides/setup-go-faster@v1.7.0
+      - uses: WillAbides/setup-go-faster@v1.15.0
         with:
           go-version: ${{matrix.go}}
 
@@ -33,17 +33,17 @@ jobs:
   staticcheck:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
-      - uses: dominikh/staticcheck-action@v1.3.1
+      - uses: dominikh/staticcheck-action@v1.4.1
         with:
-          version: "2024.1.1"
+          version: "2026.1"
           install-go: false
 
   code-coverage:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: install goveralls
         run: go install github.com/mattn/goveralls@latest
